@@ -26,7 +26,7 @@ Ovaj pristup se zasniva na mehanizmima koje pruzaju same baze podataka. Ovim meh
 ActiveRecord definise klasni metod ``joins`` za kreiranje ``JOIN`` SQL deklaracija. Kao i u slucajevima ostalih ActiveRecord metoda postoji vise nacina na koji se ``joins`` metod moze pozvati:
 
 - SQL string kao input
-- Niz ili Hash na imenovanim asocijacijama (podrzava samo INNER JOIN, vise informacija o INNER vs OUTER JOIN na [link1](http://www.programmerinterview.com/index.php/database-sql/inner-vs-outer-joins) i [link2](http://stackoverflow.com/questions/38549/difference-between-inner-and-outer-join))
+- Niz ili Hash na imenovanim asocijacijama (podrzava samo INNER JOIN, vise informacija o INNER vs OUTER JOIN na [link1](http://www.programmerinterview.com/index.php/database-sql/inner-vs-outer-joins), [link2](http://stackoverflow.com/questions/38549/difference-between-inner-and-outer-join)), [link3](http://i.imgur.com/1m55Wqo.jpg)
 - Specificiranje uslova na tabelama nastalim kao rezultat joins deklaracija
 
 Postavka:
