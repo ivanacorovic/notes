@@ -45,12 +45,12 @@ Najcesce upotrebljavani vid forme je forma za pretragu. Ona najcesce sadrzi:
 
 Ovaj kod:
 
-<pre><code><%= form_tag("/search", method: "get") do %>
-  <%= label_tag(:q, "Search for:") %>
-  <%= text_field_tag(:q) %>
-  <%= submit_tag("Search") %>
-<% end %>
-</code></pre>
+    <%= form_tag("/search", method: "get") do %>
+      <%= label_tag(:q, "Search for:") %>
+      <%= text_field_tag(:q) %>
+      <%= submit_tag("Search") %>
+    <% end %>
+
 
 Generise sledecu HTML formu:
 
