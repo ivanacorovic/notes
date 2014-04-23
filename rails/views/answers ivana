@@ -1,0 +1,165 @@
+Questions:
+
+Daniel:
+1. koja su 2 tipa parametara?
+query string, i POST data.
+2. Sto treba uraditi da bi se u JSON parametrima preskocio root element?
+---bonus
+3. Sta je default_url_options, kratko objasniti
+setuje lokalne promjenljive koje se koriste u svim kontrolerima koji su potkalse onog gdje to setujemo.
+4. Objasniti koncept jakih parametara.
+Ne moze im se pristupiti ukoliko se ne 'whitelistuju', tj svi su zabranjeni po defaultu.
+5. funkcija permit(moguce i putem primjera)
+permit(:id, [])-dozvolice upotrebu ovog atributa, tj pristup njemu.
+6. navesti bar 3 tipa za dozvoljene skalarne vrijednosti.
+string, integer, TrueClass
+7. Kratko objasniti sesije i navesti koji su mehanizmi skladistenja podataka kod sesije.
+Koriste se da bi se odrzavao odnos izmedju klijenata i servera. Na taj nacin server identifikuje klijente. Postoji skladistenje podataka pomocu coockie_store, memcookie_store, ActiveRecord_store i session_store. 
+8. Gdje je potrebno vrsiti izmjene ako zelimo da promijenimo mehanizam skladistenja podataka u sesiji
+u fajlu config/initializers/session_store.rb
+9. Koja se metoda koristi ako zelimo da se neka flash vrijednost prenese na drugi zahtjev?
+flash.keep
+10.Skip_before_action filter, kratko opisati.
+skip_before_action ce preskociti akcije koje treba da se izvrse kao before. Obicno se nakon ovoga navodi i koje metode ce proci bez before akcije. 
+11.Koja su 2 tipa HTTP autentikacije, kratko kratko opisati kljucne metode koje su sadrzane u njima.
+Basic autentikacija koja provjerava da samo da li se username i password (npr) poklapaju; digest autentikacija vrsi neko sifriranje passworda, npr, tako ga cuva i, pri prvjeri, nad unesenim parametrima odradi istu funkciju za sifriranje i tek onda poredi. Ako su isti, prolazi. osnovni metodi su basic_authenticate_http_with i authenticate_or_respond_http_with_digest 
+12.Objasniti log filtering i njegov znacaj.
+U log fajlu se cuva sve, pa je vrlo rizicno dozvoliti da se tamo upisu povjerljivi podaci, kao sto su password.. pa se frsi filtriranje tako sto se u niz filtriranih vrijednosti ubace svi parametri koje ne bismo cuvali u logu. 
+13.Objasniti upotrebu fetch metode kod jakih parametara ?
+Ako je u pitanju akcija new, ne moze se koristiti uobicajeni require, jer ne postoji taj objekat jos, pa se umjesto njega koristi fetch, npr: params.fetch(:blog, {}).permit(:id, :name)
+14.Cross site request forgery u kratkim crtama objasniti i navesti rjesenje problema.
+Kad dodje do nekih redirekcija, pa se stranica nekog drugog sajta predstavlja lazno u cilju dobijanja nekih informacija, salje nam forme koje treba popuniti i slicno. U tom slucaju ne treba brinuti jer u se Rails-u automatski, kreiranjem forme kreiraju i dva skrivena polja UTF8 i Authenticate i ona su zaduzena za resavanje ovog problema. 
+15.Koja su 3 accessora request objekta, kao i kratak opis.
+--bonus
+
+bonus:
+1.Metoda za koriscenje flash-a u istom zahtjevu?
+flash.now
+2.Navesti razliku kod operacije brisanja u sesijama i kukijima.
+kod sesija se kljuc postavlja na nil dok se kod kukija, nad time sto brisemo, poziva metod delete.
+3.Koju klasu nasledjuju svi kontroleri?
+ActionController::Base je nadklasa svih kontrolera, a nasledjuje je ApplicationController, kog dalje nasledjuju svi kontroleri koje mi definisemo. 
+
+
+Redzep:
+
+1.Ako je unos u fajlu za rutiranje resources :photos navesti koje će kontroler akcije biti dostupne. Navesti putanje za member akcije (akcije članova), a opisati šta rade collection akcije.
+Kontroler akcije(u kontroleru PhotosController):  create, new, show, index, edit, update, destroy.
+Putanje (members): /photos/:id, /photos/:id/edit, /photos/:id/destroy 
+Akcjie collection: rade nad svima iz kolekcije, ne navodi se argument (id). Npr index.
+2.Kako se definiše pojedinačni resurs? Koliko akcija i helpera će biti dostupno?
+resouce :images
+imace 6 akcija i helpera. 
+3.Da bi aplikacija prepoznala putanju /publisher/1/magazines/2/photos/3 kako moramo definisati resurse?
+resources :publisher do
+  resources :magazines do
+    resources :photos
+  end
+end
+4..Kako se definiše shallow nesting i koje akcije će se drugačije rutirati od onih u deep nestingu?
+tako sto setujemo shallow: true. 
+Drugacije ce se rutirati metode index, destroy, update,new
+5..Koje dvije opcije su dostupne u shallow nestingu i čemu služe?  
+--bonus
+6.Da bismo sljedeći kod napisali kao 
+
+  resources :posts, concerns: :image_attachable
+    resources :posts do              
+      resources :images, only: :index                  
+    end
+
+    šta (i kako) moramo definisati?
+
+concerns :images, only :index, as: image_attachable
+
+7.Kako dodati member rutu za preview akciju PhotosController-a? Koja dva helpera će biti kreirana?
+resources :photos 
+  member do
+    get 'preview'
+  end
+end
+preview_photos_url i preview_photos_path
+8.Koju putanju će Rails prepoznati dodavanjem collection rute za search akciju PhotosController-a:
+a) /photos/:id/search             
+b) /photos/search/:id    
+c) /photos/search         OK 
+d) /search/photos    
+9.   Koja dva simbola su posebna kod non-resourcefull rutiranja i čemu služe?
+:action i :controller
+10.    Navesti primjer putanje na koju će sljedeća ruta odgovoriti:
+    get ':controller/:action/:id/user/:user_id'  
+
+    images/index/1/user/5
+
+11. Navesti HTTP metode koje se koriste za ograničavanje ruta na određen metod. Koju metodu i sa kojom opcijom je moguće ograničiti rutu?  
+Metod get je moguce ograniciti opcijom :via.
+12.    Šta je Rout Globbing?
+To je povezivanje dijela putanje sa ostalim djelovima. Zadaje se tako sto neki dio zadamo sa vodecom zvjezdicom i onda umjesto njega prolazi sve sto se stavi, a taj dio poprima vrijednost koja je postavljena u svom params[:tajdio]
+13.    Kako izvršiti preklapanje new i edit segmenata u putanji?
+--bonus
+14.    Pomoću kojih opcija kontrolisati broj kreiranih akcija za rute u aplikaciji?
+--bonus    
+15. Koje metode Rails nudi za testiranje ruta?
+assert_generated
+assert_recognized
+assert_routes
+
+BONUS:
+Koji url helperi će biti kreirani u slučaju da u fajlu za rutiranje imamo unos: resources :photos?    
+photos_path, edit_photos_path(:id), new_photos_path, photos_path(:id)
+Šta radi root metoda?
+matchuje neki path sa '/'
+Dopuniti sljedeći kod tako da Rails matchuje putanju /photos/C84932 ali ne i     /photos/32048 gdje je C neko veliko slovo engleske abecede a brojevi su bilo koji petocifreni brojevi.
+get 'photos/:id', to: 'photos#show',__'/\A[0-9][0-9][0-9][0-9][0-9]\/'____
+
+Dragan:
+
+1. What is the difference between form_tag and form_for?
+form_tag prima dva argumenta: akciju i hesh opcija, i za svako polje forme se mora navesti koji model koristi (ako korisiti model), i skoro svako polje ima sufiks _tag. 
+form_for odmah na pocetku omogucava da navedete koji model se koristi, i vise nema potrebe. Definise se promjenljiva forme na pocetku i onda se polja pozivaju sa taPromjenljiva.poljeForme, bez sufiksa tag.
+2. What are the two default hidden input fields generated with most of the forms and what is their purpose?
+UTF8 i Authenticate.
+3. Which HTTP method is recommended for search forms? Why?
+GET. Da slucajno ne bi uspjeli da posaljemo svoje povjerljive informacije negdje gdje ne treba.
+4. List full name of at least 5 non model based form helpers.
+text_field_tag, select_date, select_time, label_tag, submit_tag
+5. Write HTML output which following line will generate
+ <%= text_field(:person, :name) %>
+ <input id='person_name', name="person[name]", type=text/>
+6. What is f in following code excerpt <%= form_for @article do |f|? %> 
+promjenljiva za formu.
+7. Which Form helper method you should generally use to create form input fields for associated models within the form of main model.
+fields_for 
+8. How does Rails enables sending of forms with PUT,PATCH, DELETE methods even though browsers do not support these methods?
+dodavanjem :method opcije koja kreira skriveno polje forme. Metod ce i dalje biti post/get, ali ce ovako pretrazivac znati sta da radi. 
+9. What are the three arguments of options_from_collection_for_select method?
+kolekcija, id, i atribut.  pr: options_from_collectio_for_select(User.all, :id, :name)
+10. List at least two non model based date and time form helpers.
+select_date Date.today 
+select_time Time.now
+11. Which form helper method is used for file uploads.
+--bonus
+12. Write params hash in case form with following field is submitted: 
+<input id="person_name" name="person[name]" type="text" value="Henry"/>
+{person: {name: "Henry"}}
+
+13. Write params hash in case form with following fields is submitted
+<input name="addresses[][line1]" type="text"/>
+<input name="addresses[][line2]" type="text"/>
+<input name="addresses[][city]" type="text"/>
+{addresses: [{line1 => "", line2 => "", city => ""}]}
+14. To which path following form will be submitted form_for [:admin, @article]
+--bonus
+15. List at least four html5 controls available through form helpers?
+--bonus
+16. Generate following output with options_for_select_method
+<option value="1">Lisbon</option>
+<option value="2" selected="selected">Madrid</option>
+<%=options_for_select([[1, Lisabon], [2, Madrid]], 2)>
+17. What are the arguments for form_tag helper method?
+akcija i hesh opcija
+18. What is the error in following code?
+form_tag(controller: "people", action: "search", method: "get", class: "nifty_form") 
+treba da bude: zbog parametara koji se prosledjuju
+form_tag({controller: "people", action: "search"}, method: "get", class: "nifty_form") 
+
