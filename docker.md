@@ -4,18 +4,18 @@ Docker je open soucrce projekat pokrenut od strane ljudi iz dotCloud-a. S tehnic
 
 - LXC: Linux Containers, koji dozvoljavaju izvrsavanje pojedinih procese na vecem nivou izolacije nego obicni Linux procesi. Kaze se da se proces izvrsava u kontejneru. Kontejneri obezbjedjuju izolaciju na novou:
 	- Fajl sistema: kontejner moze pristupiti samo svom sandboxovanom fajl sistemu, osim ako nije podignut u tudjem.
-	- User namespace: kontejner ima svoju korisnicku bazu.
+	- User namespace-a: kontejner ima svoju korisnicku bazu.
 	- Process namespace-a: unutar kontejnera su vidljivi samo procesi koji su njegov dio.
-	- Network namespace-a: kontejner dobija svoj virtuelni mrezni uredjaj i virtuelnu IP adresu(tako da moze da koristi koji god port, bez kolizije).
+	- Network namespace-a: kontejner dobija svoj virtuelni mrezni uredjaj i virtuelnu IP adresu (tako da moze da koristi koji god port, bez kolizije).
 
 - AUFS: advanced multi layered unification filesystem, koji se koristi za kreiranje union, copy-on-write fajl sistema. 
 
-Ovo je lista Docker rezultata na deployment i operativne probleme:
+Ovo je lista Docker rezultata za deployment i operativne probleme:
 
-- Izolacija: Docker izoluje palikacije na fajl i mreznom novou. Imate osjecaj kao da koristite pravu virtuelnu masinu, u tom smislu. 
+- Izolacija: Docker izoluje apalikacije na fajl i mreznom novou. Imate osjecaj kao da koristite pravu virtuelnu masinu, u tom smislu. 
 - Reproduktivnost: Pripremite sistem onako kako odgovara, onda commit-ujte izmjene kao image. Sada mozete instancirati koliko god image-a i prenijeti ih na drugu masinu. 
 - Bezbijednost: Docker kontejneri su bezbjedniji od obicnie izolacije procesa. 
--Ogranicenost resursa: Docker trenutno podrzava ograniceno koriscenje CPU, memorija takodje moze biti ogranicena. Ogranicavanje prostora na disku jos nije podrzano.
+- Ogranicenost resursa: Docker trenutno podrzava ograniceno koriscenje CPU-u; memorija takodje moze biti ogranicena. Ogranicavanje prostora na disku jos nije podrzano.
 - Instalacija: Doker ima Docker Index - repozitorijum sa gotovim image-ima koji se instaliraju jednom komandom. 
 - Uklanjanje: Kad aplikacija vise ne treba, unistimo njen kontejner. 
 - Upgrades, downgrades: Boot up noviju verziju aplikacije, pa onda prebacite load balancer sa starog porta na novi. 
@@ -52,7 +52,10 @@ Dodajte docker repozitorijum:
 ```
 Provjera:
 
-``sudo docker run -i -t ubuntu /bin/bash``
+```
+	sudo docker run -i -t ubuntu /bin/bash
+	exit
+```
 
 ###Dockerfiles
 
@@ -64,8 +67,6 @@ Sve Docker instrukcije izgledaju ovako:
 
 ####FROM
 Prva instrukcija svakog Dockerfile-a mora biti:
-
-`` FROM  image ``
 
 Time postavljamo image koja ce da bude u osnovi. 
 Ako image nije pronadjen na hostu, docker ce poci na docker image index, pronaci i skinuti je. 
@@ -100,6 +101,34 @@ Setuje UID korisnika.
 ```
 	# Usage: USER [UID]
 	USER 751
+```
+
+####ADD
+
+Kopira fajlove sa hosta u kontejer. U slucaju da je source URL, ona se sadrzaj skida i smjesta na destinaciju.
+
+```
+	# Usage: ADD [source directory or URL] [destination directory]
+	ADD /my_app_folder /my_app_folder
+```
+
+
+####CMD
+
+SLicno kao RUN, moze da se kristi za izvrsavanje odredjenih komandi. Medjutim, ne izvrsava se tokom build-a, vec kad se instancira kontejner uz koriscenje image-a koji se izgradjuje (build-uje). 
+
+```
+	# Usage 1: CMD application "argument", "argument", ..
+	CMD "echo" "Hello docker!"
+```
+
+####ENV
+
+Setovanje enviroment promjenljivih. Ove promjenljive imaju parove "key=value" kojima se moze pristupiti unutar kontejnera pomocu skriptova. Ovo obezbjedjuje ogromnu fleksibilnost za programe u izvrsavanju.
+
+```
+	# Usage: ENV key value
+	ENV SERVER_WORKS 4
 ```
 
 ####VOLUME
@@ -141,9 +170,10 @@ Ove komande se izvrsavaju pri pokretanju Dockerfile-a.
 ##Uvodni tutorijal
 
 ```
-	md dockerfiles
+	mkdir dockerfiles
 	cd dockerfiles
-	cat Dockerfile
+	touch Dockerfile
+	subl Dockerfile
 ``` 
 Dockerfile:
 
@@ -164,6 +194,11 @@ Ili, ako dajemo ime image-u koji gradimo:
 ```
 	docker build -t memcached .  #TAG
 ```
+Bez imena, mozemo da potrazimo image komandom:
+
+```
+	docker images
+```
 
 ```
 	MAINTAINER Ivana Corovic, ivanacorovic55@gmail.com
@@ -172,7 +207,6 @@ Ili, ako dajemo ime image-u koji gradimo:
 
 Kao u Rubiju (#)
 
-[Provjera](https://www.docker.io/learn/dockerfile/level1/)
 
 ```
 	ENTRYPOINT echo “Whale You Be My Container?”  #ovo ce se pojaviti cim pokrenete kontejner
@@ -187,7 +221,7 @@ Kao u Rubiju (#)
 	# expose memcached port
 	EXPOSE 11211
 ```
-
+[Provjera](https://www.docker.io/learn/dockerfile/level2/)
 
 `` docker ``
 
@@ -199,7 +233,7 @@ Kao u Rubiju (#)
 
 `` CONTAINER_ID=$(docker run -d -p 5000:3000 fcat/rails-getting-started) `` # uobicajen nacin da se sacuva kontejner
 
-`` docker start $CONTAINER_ID `` #stop/wait
+`` docker start $CONTAINER_ID ``
 
 Komande:
 
@@ -239,9 +273,9 @@ Primjer:
 
 5.) ``-d`` pokrece kontejner kao damon.
 
-6.) ``-p`` podesava redirekciju portova. Podrazumijevani port Kafke je 9092: prvi je za dokcker host,a  drugi za kontejner. 
+6.) ``-p`` podesava redirekciju portova. Podrazumijevani port Kafke je 9092: prvi je za dokcker host, a  drugi za kontejner. 
 
-7.) ``-v`` omogucava da host i kontejner dijele prostor, da se sinhronizuje dio fajl sistema. Dozvoljava kontejneru da cuva log i ostale podatke za buducu analizu, kao i ucitavanje testnih podataka. Takodje obezbjedjuje prostor koji moze da se obrise, ako je potrebno.
+7.) ``-v`` omogucava da host i kontejner dijele prostor, da se sinhronizuje dio fajl sistema. Dozvoljava kontejneru da cuva log i ostale podatke za buducu analizu, kao i ucitavanje testnih podataka. 
 
 
 8.) ``-name`` je nova funkcionalnost imenovanja u Dokeru. Omogucava da instancama dajemo pogodnija imena i da liknujemo kontejnere po njima.  
@@ -249,3 +283,68 @@ Primjer:
 9.) ``-link zookeeper:zookeeper`` komanda omogucava linkovanje kontejnera. Inace su kontejneri izolovani, ali Docker 0.6.5 omogucava likovanje kontejnera, radi medjusobne komunikacije i dijeljenih promjenljivih. U ovom slucaju ce Kafka moci da nadje IP adresu Zookeeper-a i znati gdje da sacuva svoje informacije koje cekaju unutar Zookeeper-a. Mogucnost linkovanja moze se koristiti za kreiranje klastera. 
 
 10.) Poslednja linija samo govori koji docker image pokrecemo: privatni repozitorijum koji se nalazi na serveru, na portu 4444 pod tag imenom "kafka". 
+
+
+##Docker provisioner
+
+Ako koristimo Docker na virtuelnoj masini, na isti nacin kao sto smo na njoj instalirali Ansible ranije, mozemo to uciniti i sa Docker-om. 
+
+Vagrantfile:
+
+```
+	# -*- mode: ruby -*-
+	# vi: set ft=ruby :
+
+	VAGRANTFILE_API_VERSION = "2"
+
+	Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
+	  
+	  config.vm.provision "docker" 
+	end
+```
+
+Ako ostavimo ovako, samo ce se instalirati Docker. Mozemo koristiti razne opcije:
+
+- images (array) - Niz image-a koje ce vec biti ,,pullovane" nakon podizanja virtuelne masine. 
+
+- version (string) - Koja verzija Dockera se instalira. Podrazumijevana je najskorija.
+
+- build_image - Build-uje image iz Dockerfile-a.
+
+- pull_images - Pull-uje navedene image, ali ih ne startuje. 
+
+- run - Pokreni kontejner i podesi ga po podizaju masine.
+
+```	  
+	config.vm.provision "docker" do |d|
+  	images: ["ubuntu"]
+  	d.pull_images "vagrant"
+  	d.build_image "/vagrant/app"
+  	d.run "rabbitmq"
+	end
+```
+
+Metod ``run``, osim imena, moze da ima i dodatne opcije: 
+
+- image (string) - Po default-u je ovo prvi argument, ali moze se navesti ovdje.
+
+- cmd (string) - Komanda koja se startuje u kontejneru. Ako nije navedeno, CMD komanda iz Dockerfile-a se koristi.
+
+- args (string) - Dodatni argumenti. Ovo su sirtovi argumenti koji se prosledjuju direktno Docker-u.
+
+- auto_assign_name (boolean) - Ako je true, --name kontejnera ce biti prvi argument metoda run. Po default-u je ovo true. Ako ime sadrzi "/" (zbog putanje image-a), pretvara se u "-". 
+
+- daemonize (boolean) - Ako je true, "-d" flag se prosledjuje run-u i kontejner se "daemonizuje". Po defaultu je true.
+
+```
+	Vagrant.configure("2") do |config|
+	  config.vm.provision "docker" do |d|
+	    d.run "ubuntu",
+	      cmd: "bash -l",
+	      args: "-v '/vagrant:/var/www'"
+	  end
+	end
+```
+
+
+NAPOMENA: Docker radi samo sa 64-bit masinama, a nasa VmBox je 32-bita, tako da nece moci. Kada pokusa da koristi precise64, puca. 
