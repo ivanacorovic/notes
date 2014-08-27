@@ -32,7 +32,7 @@
   ``data-ideus-product`` is id of the product you want to see.
   ``data-ideus-token `` is your private_token for out app. How to get it? Go to our app, create an account if you don't have one. Go to your profile, and the on Account (top of the page). You'll see ``Private token`` text box. Copy its content and that is your provate_token.
 
-6) Add this code as last in the <body> of your page:
+6) Add this code as last in the ``body`` of your page:
 
     <script>
       var script = document.createElement('script');
@@ -93,8 +93,24 @@ For this label, you need UTF-8 encoding.
     config.middleware.use Rack::JSONP
   end
 
+4) application_controller.rb
+    
+    ...
+    protect_from_forgery
 
-4) products_controller.rb
+    before_filter :cors_set_access_control_headers
+    ...
+
+    def cors_set_access_control_headers
+      headers['Access-Control-Allow-Origin'] = 'http://publisher.dev'
+      headers['Access-Control-Allow-Methods'] = 'GET'
+      headers['Access-Control-Request-Method'] = '*'
+      headers['Access-Control-Allow-Headers'] = 'Origin, X-Requested-With, Content-Type, Accept, Authorization'
+      headers['Access-Control-Max-Age'] = "1728000"
+      headers['X-Frame-Options'] = 'ALLOW-FROM http://publisher.dev'
+    end
+
+5) products_controller.rb
 
     class ProductsController < ApplicationController
 
@@ -118,16 +134,16 @@ For this label, you need UTF-8 encoding.
     end
 
 
-5) product_nutrients.rb
+6) product_nutrients.rb
 
     class ProductNutrient < ActiveRecord::Base
       ...
       delegate :name, :description, :reference_unit, :reference_value, to: :nutrient
     end
 
-6) Create new folder in ~/gitlab/public called ideus-widget
+7) Create new folder in ~/gitlab/public called ideus-widget
 
-7) Add these tree files to public/ideus-widget: [nutritionLabel.css](https://bitbucket.org/ivanacorovic/gitlabhq2/raw/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutritionLabel.css), [nutritionLabel,js](https://bitbucket.org/ivanacorovic/gitlabhq2/raw/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutritionLabel.js), [nutrition_widget.js](https://bitbucket.org/ivanacorovic/gitlabhq2/src/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutrition_widget.js?at=cors)
+8) Add these tree files to public/ideus-widget: [nutritionLabel.css](https://bitbucket.org/ivanacorovic/gitlabhq2/raw/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutritionLabel.css), [nutritionLabel,js](https://bitbucket.org/ivanacorovic/gitlabhq2/raw/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutritionLabel.js), [nutrition_widget.js](https://bitbucket.org/ivanacorovic/gitlabhq2/src/57689636a6520c608f3a23096cc022e2762cae2f/public/ideus-widget/nutrition_widget.js?at=cors)
 
 #####Have fun! :)
   
