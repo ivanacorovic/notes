@@ -1,0 +1,8 @@
+Ako sudo chef-solo -c /tmp/solo.rb -j /tmp/solo.json puca uz gresku:
+
+ extconf.rb failed 
+
+pokusajte:
+
+sudo apt-get install libmysqlclient-dev libmysqlclient18
+
